@@ -181,11 +181,6 @@ CREATE OR REPLACE VIEW Serie_Com_Temporadas AS
 	    s.sinopse,
 	    p.nome;
 
-     --───────────────────────────────────────--
--- Trigger para validar a data de estreia do Episódio
-     --───────────────────────────────────────--
-
-
 	 --───────────────--
 /*	  Triggers e Funções	*/
       	 --───────────────--
