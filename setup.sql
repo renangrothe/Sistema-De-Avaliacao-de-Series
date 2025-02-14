@@ -35,35 +35,12 @@
 
 CREATE TABLE Usuario ( 
 	email VARCHAR(255) PRIMARY KEY, 
+	senha VARCHAR(255) NOT NULL,
 	nome VARCHAR(255) NOT NULL, 
 	data_nascimento DATE NOT NULL CHECK (data_nascimento > '1910-01-01'), 
 	senha VARCHAR(255) NOT NULL);
 
--- Tabela associada a Usuario com a lista de gêneros permitida.
-
-CREATE TABLE Genero_Usuario ( 
-	email VARCHAR(255), 
-	genero VARCHAR(50) NOT NULL CHECK (
-		genero IN (
-			'homem', 
-			'mulher', 
-			'prefiro não informar')), 
-	PRIMARY KEY (email, genero), 
-	FOREIGN KEY (email) REFERENCES Usuario(email));
-
--- View (consulta) para visualizar a idade do usuário
-
-CREATE OR REPLACE VIEW Usuario_Com_Idade AS
-	SELECT
-		email,
-		nome,
-		data_nascimento,
-	-----	date_part('year', age(current_date, data_nascimento))::int AS idade,
-		senha
-	FROM Usuario;
-
 /*
-
 	Série:
 
 	O aplicativo organiza as séries em temporadas. 
@@ -75,60 +52,6 @@ CREATE TABLE Serie (
 	sinopse TEXT NOT NULL, pais_id INT NOT NULL, 
 	FOREIGN KEY (pais_id) REFERENCES Pais(id)
 );
-
--- View (consulta) para visualizar o número de temporadas 
--- Coluna numero_temporadas
-
-CREATE OR REPLACE VIEW Serie_Com_Temporadas AS
-SELECT
-    s.nome,
-    s.sinopse,
-    p.nome AS pais_origem,
-    COALESCE(MAX(t.num_temporada), 0) AS numero_temporadas -- se null >>> 0
-FROM
-    Serie s
-JOIN
-    Pais p ON s.pais_id = p.id
-LEFT JOIN
-    Temporada t ON s.nome = t.serie_nome
-GROUP BY
-    s.nome,
-    s.sinopse,
-    p.nome;
-
--- Tabela associada a Serie para armazenar os valores permitidos para Serie_Status
-
-CREATE TABLE Serie_Status ( 
-	serie_nome VARCHAR(255) NOT NULL, 
-	status VARCHAR(50) NOT NULL CHECK 
-		(status IN (
-			'em andamento', 
-			'finalizada')), 
-	PRIMARY KEY (serie_nome, status), 
-	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
-
-
--- Tabela associada a Serie para armazenar os valores permitidos para Serie_Genero
-
- CREATE TABLE Serie_Genero ( 
-	serie_nome VARCHAR(255) NOT NULL, 
-	genero VARCHAR(50) NOT NULL CHECK (
-		genero IN (
-			'ação', 
-			'comédia', 
-			'drama', 
-			'ficção científica', 
-			'romance', 'suspense', 
-			'terror')), 
-	PRIMARY KEY (serie_nome, genero), 
-	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
-
-
--- Tabela associada a Serie para armazenar os valores permitidos para Pais.
-
-CREATE TABLE Pais ( 
-	id SERIAL PRIMARY KEY, 
-	nome VARCHAR(255) NOT NULL UNIQUE);
 
 /*
 	Temporada:
@@ -171,9 +94,101 @@ CREATE TABLE Episodio (
 	PRIMARY KEY (serie_nome, num_temporada, num_episodio), 
 	FOREIGN KEY (serie_nome, num_temporada) REFERENCES Temporada(serie_nome, num_temporada));
 
+/*
+	Tabelas associadas com valores 'standard'
+*/
+
+	 --──────────────────────────────────────--
+/*	Tabelas com valores de campos multivalorados	*/
+      	 --──────────────────────────────────────--
+
+-- Gênero do usuário
+
+CREATE TABLE Genero_Usuario ( 
+	email VARCHAR(255), 
+	genero VARCHAR(50) NOT NULL CHECK (
+		genero IN (
+			'homem', 
+			'mulher', 
+			'prefiro não informar')), 
+	PRIMARY KEY (email, genero), 
+	FOREIGN KEY (email) REFERENCES Usuario(email));
+
+-- Status da Série
+
+CREATE TABLE Serie_Status ( 
+	serie_nome VARCHAR(255) NOT NULL, 
+	status VARCHAR(50) NOT NULL CHECK 
+		(status IN (
+			'em andamento', 
+			'finalizada')), 
+	PRIMARY KEY (serie_nome, status), 
+	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
+
+
+-- Gênero da Série
+
+ CREATE TABLE Serie_Genero ( 
+	serie_nome VARCHAR(255) NOT NULL, 
+	genero VARCHAR(50) NOT NULL CHECK (
+		genero IN (
+			'ação', 
+			'comédia', 
+			'drama', 
+			'ficção científica', 
+			'romance', 'suspense', 
+			'terror')), 
+	PRIMARY KEY (serie_nome, genero), 
+	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
+
+-- País da Série
+
+CREATE TABLE Pais ( 
+	id SERIAL PRIMARY KEY, 
+	nome VARCHAR(255) NOT NULL UNIQUE);
+
+	 --──────────────────────────────────────--
+/*	  Consultas para calcular dados derivados	*/
+      	 --──────────────────────────────────────--
+
+-- Visualizar a idade do usuário
+
+CREATE OR REPLACE VIEW Usuario_Com_Idade AS
+	SELECT
+		email,
+		nome,
+		data_nascimento,
+		date_part('year', age(current_date, data_nascimento))::int AS idade,
+		senha
+	FROM Usuario;
+
+-- Visualizar o número de temporadas 
+
+CREATE OR REPLACE VIEW Serie_Com_Temporadas AS
+	SELECT
+	    s.nome,
+	    s.sinopse,
+	    p.nome AS pais_origem,
+	    COALESCE(MAX(t.num_temporada), 0) AS numero_temporadas -- se null >>> 0
+	FROM
+	    Serie s
+	JOIN
+	    Pais p ON s.pais_id = p.id
+	LEFT JOIN
+	    Temporada t ON s.nome = t.serie_nome
+	GROUP BY
+	    s.nome,
+	    s.sinopse,
+	    p.nome;
+
      --───────────────────────────────────────--
 -- Trigger para validar a data de estreia do Episódio
      --───────────────────────────────────────--
+
+
+	 --───────────────--
+/*	  Triggers e Funções	*/
+      	 --───────────────--
 
 -- A data de estreia do episódio deve ser igual ou posterior a 01/01 do ano de lançamento da respectiva temporada.
 
@@ -188,11 +203,11 @@ BEGIN
 	INTO v_ano_lancamento
 	FROM Temporada
 	WHERE serie_nome = NEW.serie_nome
-	AND num_temporada = NEW.num_temporada;
+		AND num_temporada = NEW.num_temporada;
 
 	-- Tratando erros:
 	IF NOT FOUND THEN
-RAISE EXCEPTION 'Temporada nao encontrada para a serie % e temporada %', NEW.serie_nome, NEW.num_temporada;
+		RAISE EXCEPTION 'Temporada nao encontrada para a serie % e temporada %', NEW.serie_nome, NEW.num_temporada;
 	END IF;
 
 	-- converter o ano de lançamento para uma data mínima: 01/01 do ano
@@ -200,8 +215,8 @@ RAISE EXCEPTION 'Temporada nao encontrada para a serie % e temporada %', NEW.ser
 
 	-- Verifica se a data de estreia do episódio não é anterior à data mínima
 	IF NEW.data_estreia < v_data_minima THEN
-	RAISE EXCEPTION 'Data de estreia (%) nao pode ser anterior ao inicio da temporada (% - minimo %)',
-	NEW.data_estreia, v_ano_lancamento, v_data_minima;
+		RAISE EXCEPTION 'Data de estreia (%) nao pode ser anterior ao inicio da temporada (% - minimo %)',
+		NEW.data_estreia, v_ano_lancamento, v_data_minima;
 	END IF;
 
 	RETURN NEW;
