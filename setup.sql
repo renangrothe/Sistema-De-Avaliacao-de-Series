@@ -27,6 +27,13 @@
 
 	*****************************************/
 
+
+-- País da Série
+
+CREATE TABLE Pais ( 
+	id SERIAL PRIMARY KEY, 
+	nome VARCHAR(255) NOT NULL UNIQUE);
+
 /*	Usuário:
 
 	Cada usuário possui um perfil que armazena as seguintes informações: nome, data de nascimento (onde o ano deve ser maior que 1910), idade (calculada com base na data de nascimento), e-mail, senha e gênero (homem, mulher ou prefiro não informar).
@@ -37,8 +44,7 @@ CREATE TABLE Usuario (
 	email VARCHAR(255) PRIMARY KEY, 
 	senha VARCHAR(255) NOT NULL,
 	nome VARCHAR(255) NOT NULL, 
-	data_nascimento DATE NOT NULL CHECK (data_nascimento > '1910-01-01'), 
-	senha VARCHAR(255) NOT NULL);
+	data_nascimento DATE NOT NULL CHECK (data_nascimento > '1910-01-01'));
 
 /*
 	Série:
@@ -49,9 +55,9 @@ CREATE TABLE Usuario (
 
 CREATE TABLE Serie ( 
 	nome VARCHAR(255) PRIMARY KEY, 
-	sinopse TEXT NOT NULL, pais_id INT NOT NULL, 
-	FOREIGN KEY (pais_id) REFERENCES Pais(id)
-);
+	sinopse TEXT NOT NULL, 
+	pais_id INT NOT NULL, 
+	FOREIGN KEY (pais_id) REFERENCES Pais(id));
 
 /*
 	Temporada:
@@ -94,9 +100,6 @@ CREATE TABLE Episodio (
 	PRIMARY KEY (serie_nome, num_temporada, num_episodio), 
 	FOREIGN KEY (serie_nome, num_temporada) REFERENCES Temporada(serie_nome, num_temporada));
 
-/*
-	Tabelas associadas com valores 'standard'
-*/
 
 	 --──────────────────────────────────────--
 /*	Tabelas com valores de campos multivalorados	*/
@@ -140,12 +143,6 @@ CREATE TABLE Serie_Status (
 			'terror')), 
 	PRIMARY KEY (serie_nome, genero), 
 	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
-
--- País da Série
-
-CREATE TABLE Pais ( 
-	id SERIAL PRIMARY KEY, 
-	nome VARCHAR(255) NOT NULL UNIQUE);
 
 	 --──────────────────────────────────────--
 /*	  Consultas para calcular dados derivados	*/
