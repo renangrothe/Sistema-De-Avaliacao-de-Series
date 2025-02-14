@@ -51,9 +51,20 @@ CREATE TABLE Genero_Usuario (
 	PRIMARY KEY (email, genero), 
 	FOREIGN KEY (email) REFERENCES Usuario(email));
 
+-- View (consulta) para visualizar a idade do usuário
+
+CREATE OR REPLACE VIEW Usuario_Com_Idade AS
+	SELECT
+		email,
+		nome,
+		data_nascimento,
+	-----	date_part('year', age(current_date, data_nascimento))::int AS idade,
+		senha
+	FROM Usuario;
+
 /*
 
-Série:
+	Série:
 
 	O aplicativo organiza as séries em temporadas. 
 	
@@ -149,7 +160,56 @@ CREATE TABLE Episodio (
 	nome VARCHAR(255) NOT NULL, 
 	duracao INT NOT NULL CHECK (duracao > 0), 
 	data_estreia DATE NOT NULL CHECK (data_estreia >= '1910-01-01'), 
-	classificacao_indicativa VARCHAR(10)
-   NOT NULL CHECK (classificacao_indicativa IN ('L', '10', '12', '14', '16', '18')), 
+	classificacao_indicativa VARCHAR(10) NOT NULL CHECK 
+		(classificacao_indicativa IN (
+				'L', 
+				'10', 
+				'12', 
+				'14', 
+				'16', 
+				'18')), 
 	PRIMARY KEY (serie_nome, num_temporada, num_episodio), 
 	FOREIGN KEY (serie_nome, num_temporada) REFERENCES Temporada(serie_nome, num_temporada));
+
+     --───────────────────────────────────────--
+-- Trigger para validar a data de estreia do Episódio
+     --───────────────────────────────────────--
+
+-- A data de estreia do episódio deve ser igual ou posterior a 01/01 do ano de lançamento da respectiva temporada.
+
+CREATE OR REPLACE FUNCTION verifica_data_estreia()
+	RETURNS TRIGGER AS $$
+	DECLARE
+		v_ano_lancamento INT;
+		v_data_minima DATE;
+BEGIN
+	-- Busca o ano de lançamento na tabela Temporada
+	SELECT ano_lancamento
+	INTO v_ano_lancamento
+	FROM Temporada
+	WHERE serie_nome = NEW.serie_nome
+	AND num_temporada = NEW.num_temporada;
+
+	-- Tratando erros:
+	IF NOT FOUND THEN
+RAISE EXCEPTION 'Temporada nao encontrada para a serie % e temporada %', NEW.serie_nome, NEW.num_temporada;
+	END IF;
+
+	-- converter o ano de lançamento para uma data mínima: 01/01 do ano
+	v_data_minima := to_date(v_ano_lancamento::TEXT, 'YYYY');
+
+	-- Verifica se a data de estreia do episódio não é anterior à data mínima
+	IF NEW.data_estreia < v_data_minima THEN
+	RAISE EXCEPTION 'Data de estreia (%) nao pode ser anterior ao inicio da temporada (% - minimo %)',
+	NEW.data_estreia, v_ano_lancamento, v_data_minima;
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Condição verificada antes da inserção do episódio na tabela
+CREATE TRIGGER trigger_verifica_data_estreia
+BEFORE INSERT OR UPDATE ON Episodio
+FOR EACH ROW
+EXECUTE FUNCTION verifica_data_estreia();
