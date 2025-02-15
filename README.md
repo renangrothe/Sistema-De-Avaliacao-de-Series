@@ -44,7 +44,11 @@ Contribuições são bem-vindas! Se você deseja melhorar este projeto, sinta-se
 
 Este projeto está licenciado sob a Licença Pública Geral GNU versão 2.0. Para mais detalhes, consulte o arquivo `LICENSE` neste repositório.
 
----
+## Geração de Comandos SQL para Temporadas e Episódios 🎥
+
+Para facilitar a inserção de dados sobre temporadas e episódios de séries, você pode usar o repositório [IMDB2SQLINSERTION](https://github.com/renangrothe/IMDB2SQLINSERTION), que permite realizar um webscrape do IMDB para gerar comandos SQL de inserção automaticamente.
+
+Para mais detalhes sobre como utilizar a ferramenta, consulte o repositório acima. Este processo pode economizar tempo ao registrar todas as temporadas e episódios de uma série.
 
 **Nota**: Este projeto foi desenvolvido como parte da disciplina de Bancos de Dados da UFSCar Sorocaba no segundo semestre de 2024.
 
