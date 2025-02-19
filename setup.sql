@@ -128,7 +128,7 @@ ALTER TABLE Avaliacao
   ADD CONSTRAINT unique_avaliacao UNIQUE (email_usuario, serie_nome, num_temporada, num_episodio);
 
 	 --──────────────────────────────────────--
-/*	Tabelas com valores de campos multivalorados	*/
+/*   Tabelas com valores de campos com valores variados	*/
       	 --──────────────────────────────────────--
 
 -- Gênero do usuário
