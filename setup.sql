@@ -98,8 +98,34 @@ CREATE TABLE Episodio (
 				'16', 
 				'18')), 
 	PRIMARY KEY (serie_nome, num_temporada, num_episodio), 
-	FOREIGN KEY (serie_nome, num_temporada) REFERENCES Temporada(serie_nome, num_temporada));
+	FOREIGN KEY (serie_nome, num_temporada) 
+		REFERENCES Temporada(serie_nome, num_temporada));
 
+/*
+	Avaliação:
+
+	Os usuários podem realizar avaliações de episódios, uma avaliação contém um id, uma nota (de 0 a 5), um comentário (opcional) e a data em que foi realizada.
+
+	A avaliação sempre se refere a um único episódio */
+
+CREATE TABLE Avaliacao (
+	id SERIAL PRIMARY KEY, 
+	email_usuario VARCHAR(255) NOT NULL, 
+	serie_nome VARCHAR(255) NOT NULL, 
+	num_temporada INT NOT NULL,
+	num_episodio INT NOT NULL,
+	nota INT NOT NULL CHECK (nota >= 0 AND nota <= 5),
+	data_avaliacao DATE NOT NULL,
+	comentario TEXT,
+	FOREIGN KEY (email_usuario) 
+		REFERENCES Usuario(email),
+	FOREIGN KEY (serie_nome, num_temporada, num_episodio) 
+		REFERENCES Episodio(serie_nome, num_temporada, num_episodio));
+
+-- Mantemos um id SERIAL para poder consultar Avaliações por outras maneiras, além das foreign keys, mas cada usuário pode avaliar um mesmo episódio apenas uma vez
+
+ALTER TABLE avaliacoes
+  ADD CONSTRAINT unique_avaliacao UNIQUE (email_usuario, serie, temporada, episodio);
 
 	 --──────────────────────────────────────--
 /*	Tabelas com valores de campos multivalorados	*/
@@ -119,17 +145,18 @@ CREATE TABLE Genero_Usuario (
 
 -- Status da Série
 
+-- Cada série pode ter apenas 1 status associado a ela (em andamento ou finalizada), usando serie_nome como primary key, garantimos a unicidade deste dado)
+
 CREATE TABLE Serie_Status ( 
-	serie_nome VARCHAR(255) NOT NULL, 
+	serie_nome VARCHAR(255) PRIMARY KEY, 
 	status VARCHAR(50) NOT NULL CHECK 
 		(status IN (
 			'em andamento', 
 			'finalizada')), 
-	PRIMARY KEY (serie_nome, status), 
 	FOREIGN KEY (serie_nome) REFERENCES Serie(nome));
 
 
--- Gênero da Série
+-- Gênero(s) da Série
 
  CREATE TABLE Serie_Genero ( 
 	serie_nome VARCHAR(255) NOT NULL, 
@@ -217,6 +244,90 @@ $$ LANGUAGE plpgsql;
 
 -- Condição verificada antes da inserção do episódio na tabela
 CREATE TRIGGER trigger_verifica_data_estreia
-BEFORE INSERT OR UPDATE ON Episodio
+	BEFORE INSERT OR UPDATE ON Episodio
+	FOR EACH ROW EXECUTE FUNCTION verifica_data_estreia();
+
+-- Todas as Séries devem ter pelo menos um gênero.
+
+-- Função para verificar se há gênero antes da inserção
+CREATE OR REPLACE FUNCTION verifica_genero_serie()
+RETURNS TRIGGER AS $$
+DECLARE
+    allowed_genres TEXT[] := ARRAY['action','comedy','drama','sci-fi','romance','thriller','horror'];
+BEGIN
+    IF NOT (NEW.genero = ANY(allowed_genres)) THEN
+        RAISE EXCEPTION 'Gênero "%" não é permitido para a série "%".', NEW.genero, NEW.serie_nome;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger associada
+CREATE TRIGGER trigger_verifica_genero_serie
+BEFORE INSERT OR UPDATE ON Serie_Genero
 FOR EACH ROW
-EXECUTE FUNCTION verifica_data_estreia();
+EXECUTE FUNCTION verifica_genero_serie();
+
+
+-- Função que impede a exclusão do gênero se ele for o único presente.
+CREATE OR REPLACE FUNCTION check_serie_genero_exists()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_count INT;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+      FROM Serie_Genero
+     WHERE serie_nome = OLD.serie_nome;
+
+    IF v_count = 0 THEN
+        RAISE EXCEPTION 'A série "%" deve possuir pelo menos um gênero.', OLD.serie_nome;
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger associada
+CREATE TRIGGER trigger_check_serie_genero_exists
+AFTER DELETE ON Serie_Genero
+FOR EACH ROW
+EXECUTE FUNCTION check_serie_genero_exists();
+
+
+
+
+-- Uma Avaliação não pode ser criada pelo usuário antes da data de lançamento do episódio
+
+CREATE OR REPLACE FUNCTION verifica_data_avaliacao()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_data_estreia DATE;
+BEGIN
+    -- Busca a data de estreia do episódio avaliado
+    SELECT data_estreia
+      INTO v_data_estreia
+      FROM Episodio
+     WHERE serie_nome = NEW.serie_nome
+       AND num_temporada = NEW.num_temporada
+       AND num_episodio = NEW.num_episodio;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Episódio não encontrado para a série %, temporada % e episódio %',
+                        NEW.serie_nome, NEW.num_temporada, NEW.num_episodio;
+    END IF;
+
+    -- Verifica se a data da avaliação é posterior à data de estreia do episódio
+    IF NEW.data_avaliacao <= v_data_estreia THEN
+        RAISE EXCEPTION 'Data da avaliação (%) deve ser posterior à data de estreia (%) do episódio',
+                        NEW.data_avaliacao, v_data_estreia;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Antes da inserção da avaliação no sistema.
+CREATE TRIGGER trigger_verifica_data_avaliacao
+BEFORE INSERT OR UPDATE ON Avaliacao
+FOR EACH ROW
+EXECUTE FUNCTION verifica_data_avaliacao();
+
