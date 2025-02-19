@@ -112,3 +112,66 @@ BEGIN
         RAISE EXCEPTION 'Data da avaliação (%) deve ser posterior à data de estreia (%) do episódio',
                         NEW.data_avaliacao, v_data_estreia;
     END IF;
+
+-- Trigger associada (antes da inserção)
+CREATE TRIGGER trigger_verifica_data_avaliacao
+BEFORE INSERT OR UPDATE ON Avaliacao
+FOR EACH ROW
+EXECUTE FUNCTION verifica_data_avaliacao();
+
+
+-- Impedir a inserção de uma avaliação por um usuário que não tem a idade mínima (classificação indicativa) para assistir. 
+
+CREATE OR REPLACE FUNCTION verifica_classificacao_avaliacao()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_data_nascimento DATE;
+    v_idade INT;
+    v_classificacao TEXT;
+    v_classificacao_num INT;
+BEGIN
+    -- Busca a data de nascimento do usuário
+    SELECT data_nascimento
+      INTO v_data_nascimento
+      FROM Usuario
+     WHERE email = NEW.email_usuario;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Usuário não encontrado com email: %', NEW.email_usuario;
+    END IF;
+
+    -- Calcula a idade do usuário (em anos)
+    v_idade := date_part('year', age(current_date, v_data_nascimento))::int;
+
+    -- Busca a classificação indicativa do episódio avaliado
+    SELECT classificacao_indicativa
+      INTO v_classificacao
+      FROM Episodio
+     WHERE serie_nome = NEW.serie_nome
+       AND num_temporada = NEW.num_temporada
+       AND num_episodio = NEW.num_episodio;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Episódio não encontrado para a série %, temporada %, episódio %',
+            NEW.serie_nome, NEW.num_temporada, NEW.num_episodio;
+    END IF;
+
+    IF v_classificacao <> 'L' THEN
+        v_classificacao_num := v_classificacao::int;
+        IF v_idade < v_classificacao_num THEN
+            RAISE EXCEPTION 'Usuário com idade % não atende à classificação indicativa % do episódio.',
+                v_idade, v_classificacao;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger associada (antes da inserção da avaliação no banco
+CREATE TRIGGER trigger_verifica_classificacao_avaliacao
+BEFORE INSERT OR UPDATE ON Avaliacao
+FOR EACH ROW 
+EXECUTE FUNCTION verifica_classificacao_avaliacao();
+
+
