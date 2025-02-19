@@ -35,13 +35,11 @@ O repositório está organizado da seguinte forma:
 
 3. **Executar o Script de Configuração**: No cliente SQL de sua preferência, execute o arquivo `setup.sql` para criar as tabelas e estruturas necessárias.
 
-4. **Executar o Script para configurar as triggers e views úteis na tabela.
+4. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais na ordem a seguir.
 
-5. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais na ordem a seguir.
+   **pais.sql, usuarios.sql, series.sql, status_serie.sql, avalia.sql**
 
-6. **pais.sql, usuarios.sql, series.sql, status_serie.sql, avalia.sql
-
-7. **Caso precise ou queira reiniciar as tabelas para inserir outros dados ou alterar o arquivo de setup, execute o script_reset_db.sql
+5. **Caso precise ou queira reiniciar as tabelasi** execute o script_reset_db.sql, ele dropa todas as tabelas.
 
 ## Contribuição 🤝
 
