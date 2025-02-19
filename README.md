@@ -14,6 +14,7 @@ Este repositório contém a implementação final do projeto desenvolvido para a
 O repositório está organizado da seguinte forma:
 
 - `scripts_insercao/`: Contém scripts SQL para inserção de dados iniciais no banco de dados.
+- `views_and_triggers/`: Contém scripts para criar as triggers e views necessárias.
 - `setup.sql`: Script SQL para criação das tabelas e estruturas necessárias no banco de dados.
 
 ## Tecnologias Utilizadas 🛠️
@@ -34,7 +35,13 @@ O repositório está organizado da seguinte forma:
 
 3. **Executar o Script de Configuração**: No cliente SQL de sua preferência, execute o arquivo `setup.sql` para criar as tabelas e estruturas necessárias.
 
-4. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais.
+4. **Executar o Script para configurar as triggers e views úteis na tabela.
+
+5. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais na ordem a seguir.
+
+6. **pais.sql, usuarios.sql, series.sql, status_serie.sql, avalia.sql
+
+7. **Caso precise ou queira reiniciar as tabelas para inserir outros dados ou alterar o arquivo de setup, execute o script_reset_db.sql
 
 ## Contribuição 🤝
 
