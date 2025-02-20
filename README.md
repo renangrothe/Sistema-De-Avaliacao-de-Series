@@ -33,13 +33,19 @@ O repositório está organizado da seguinte forma:
 
 2. **Configurar o Banco de Dados**: Certifique-se de ter o PostgreSQL instalado. Crie um novo banco de dados para o projeto.
 
-3. **Executar o Script de Configuração**: No cliente SQL de sua preferência, execute o arquivo `setup.sql` para criar as tabelas e estruturas necessárias.
+3. **Executar o Script de Configuração**: No cliente do PostgreSQL de sua preferência, execute o arquivo `setup.sql` para criar as tabelas e estruturas necessárias.
 
-4. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais na ordem a seguir.
+4. **Criar as views e triggers**: Executar no banco (antes da inserção dos dados!!) os arquivos **create_views.sql** e **triggers_funcoes.sql** para garantir a visualização de todos as mensagens de tratamento de erros ao inserir os dados no BD.
+
+5. **Inserir Dados Iniciais**: Dentro do diretório `scripts_insercao/`, execute os scripts SQL para popular o banco de dados com dados iniciais na ordem a seguir.
 
    **pais.sql, usuarios.sql, series.sql, status_serie.sql, avalia.sql**
 
-5. **Caso precise ou queira reiniciar as tabelasi** execute o script_reset_db.sql, ele dropa todas as tabelas.
+6. **Testagem**: No diretório **testes** existem scripts (com seu output esperado para este conjunto de dados) para verificar o funcionamento das Triggers. 
+
+7. **Consultar**: No arquivo **consultar.sql**, basta remover o comentário das linhas apropriadas para a consulta que você deseja realizar, através das views descritas em **./views_and_triggers/create_views**
+
+8. **Caso precise ou queira reiniciar as tabelasi** execute o script_reset_db.sql, ele dropa todas as tabelas.
 
 ## Contribuição 🤝
 

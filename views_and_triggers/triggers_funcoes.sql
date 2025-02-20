@@ -112,6 +112,9 @@ BEGIN
         RAISE EXCEPTION 'Data da avaliação (%) deve ser posterior à data de estreia (%) do episódio',
                         NEW.data_avaliacao, v_data_estreia;
     END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Trigger associada (antes da inserção)
 CREATE TRIGGER trigger_verifica_data_avaliacao
