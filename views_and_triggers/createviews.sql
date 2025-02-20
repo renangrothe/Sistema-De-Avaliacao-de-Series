@@ -269,3 +269,43 @@ CREATE VIEW Usuarios_Min_Dez_Avaliacoes AS
  Ana Silva      | ana.silva@example.com      |               13
  Carla Oliveira | carla.oliveira@example.com |               10
 (4 rows) */
+
+-- View para consultar os episódios de uma série ordenados pela nota média
+
+ 
+CREATE OR REPLACE VIEW Top_Rated_Episodes AS
+	SELECT a.serie_nome, a.num_temporada, a.num_episodio, e.nome AS nome_episodio,
+	       COUNT(a.id) AS total_avaliacoes, AVG(a.nota) AS media_nota
+	FROM Avaliacao a
+	JOIN Episodio e ON a.serie_nome = e.serie_nome
+	AND a.num_temporada = e.num_temporada
+	AND a.num_episodio = e.num_episodio
+--	WHERE a.serie_nome = 'The Office'
+	GROUP BY a.serie_nome, a.num_temporada, a.num_episodio, e.nome
+	ORDER BY media_nota DESC;
+
+-- Utilização: SELECT * FROM Top_Rated_Episodes WHERE serie_nome = 'The Office';
+-- ou
+
+
+/* Output esperado:
+
+serie_nome | num_temporada | num_episodio |         nome_episodio          | total_avaliacoes |     media_nota
+------------+---------------+--------------+--------------------------------+------------------+--------------------
+ The Office |             9 |           20 | Paper Airplane                 |                1 | 5.0000000000000000
+ The Office |             3 |            3 | The Coup                       |                1 | 5.0000000000000000
+ The Office |             4 |           10 | Chair Model                    |                1 | 5.0000000000000000
+ The Office |             5 |           15 | Lecture Circuit: Part 2        |                1 | 5.0000000000000000
+ The Office |             5 |           20 | Dream Team                     |                1 | 5.0000000000000000
+ The Office |             8 |           22 | Fundraiser                     |                1 | 5.0000000000000000
+ The Office |             9 |           18 | Promos                         |                1 | 5.0000000000000000
+ The Office |             7 |           15 | PDA                            |                1 | 4.0000000000000000
+ The Office |             6 |           18 | The Delivery: Part 2           |                1 | 4.0000000000000000
+ The Office |             6 |           22 | Secretarys Day                 |                1 | 4.0000000000000000
+ The Office |             2 |           18 | Take Your Daughter to Work Day |                1 | 4.0000000000000000
+ The Office |             4 |            8 | The Deposition                 |                2 | 3.5000000000000000
+ The Office |             7 |           20 | Michaels Last Dundies          |                1 | 3.0000000000000000
+ The Office |             1 |            4 | The Alliance                   |                1 | 3.0000000000000000
+ The Office |             3 |            6 | Diwali                         |                1 | 3.0000000000000000
+ The Office |             3 |           15 | Phyllis Wedding                |                1 | 3.0000000000000000
+ The Office |             8 |           18 | Last Day in Florida            |                1 | 3.0000000000000000*/
